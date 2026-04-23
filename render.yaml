@@ -1,0 +1,15 @@
+services:
+  # Python Backend Service
+  - type: web
+    name: multimodal-backend
+    env: python
+    plan: starter # Starter plan recommended for ML models (512MB RAM minimum)
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn multimodal_main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0

@@ -1,0 +1,36 @@
+# Unified Backend Requirements
+# Core
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv==1.2.2
+groq==1.1.2
+google-generativeai==0.8.6
+protobuf==6.31.1
+requests
+
+# Data & ML
+numpy
+pandas
+tensorflow
+keras
+keras_preprocessing
+pydantic
+scikit-learn
+torch
+torchvision
+torchaudio
+scipy
+
+# Audio Processing
+librosa
+soundfile
+whisperx @ git+https://github.com/m-bain/whisperx.git
+
+# Video Processing (OpenCV & Face Detection)
+opencv-python
+mtcnn
+
+# Visualization
+matplotlib
+seaborn

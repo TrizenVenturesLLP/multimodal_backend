@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.venv
+venv/
+ENV/
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+app.log
+
+# Temporary Storage (AI Pipeline - IMPORTANT TO IGNORE)
+temp_videos/
+temp_audio/
+temp_trans/
+temp_results/
+temp_cache/
+
+# Large AI Models (IMPORTANT TO IGNORE)
+*.h5
+*.bin
+*.pth
+*.pth.tar
+video/model/
+text/models/
+audio/model/
+torch/
+.cache/
+
+# OS Files
+.DS_Store
+Thumbs.db
