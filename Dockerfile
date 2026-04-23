@@ -1,13 +1,11 @@
-# Use a Python image with built-in FFmpeg support or install it
-FROM python:3.11-slim
+# Use full Python image (more stable for cloud builds and includes git/build-essential)
+FROM python:3.11-bookworm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install remaining system dependencies (ffmpeg and GL libraries)
+RUN apt-get update && apt-get install -y \
     ffmpeg \
-    git \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
