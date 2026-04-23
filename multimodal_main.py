@@ -136,6 +136,19 @@ def safe_cleanup(file_path):
             logger.warning(f"Failed to delete {file_path}: {e}")
             break
 
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": "Multimodal Emotion Analysis API is running",
+        "documentation": "/docs",
+        "version": "1.1.0"
+    }
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
 @app.post("/api/multimodal/analyze")
 async def analyze_multimodal(video: UploadFile = File(...)):
     """Unified Multimodal API Analysis Pipeline"""
