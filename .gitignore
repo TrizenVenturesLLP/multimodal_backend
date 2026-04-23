@@ -18,14 +18,14 @@ temp_trans/
 temp_results/
 temp_cache/
 
-# Large AI Models (IMPORTANT TO IGNORE)
-*.h5
-*.bin
-*.pth
-*.pth.tar
-video/model/
-text/models/
-audio/model/
+# Large AI Models (Commented out to allow deployment)
+# *.h5
+# *.bin
+# *.pth
+# *.pth.tar
+# video/model/
+# text/models/
+# audio/model/
 torch/
 .cache/
 
