@@ -13,9 +13,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 load_dotenv()
 
-# Ensure model caches are in the text folder on E: drive
-os.environ["HF_HOME"] = "e:/TRIZEN/audio_video/backend/text/models/huggingface"
-os.environ["XDG_CACHE_HOME"] = "e:/TRIZEN/audio_video/backend/text/models"
+# Use paths relative to this file to work on both Windows and Linux (Render)
+TEXT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.environ["HF_HOME"] = os.path.join(TEXT_ROOT, "models", "huggingface")
+os.environ["XDG_CACHE_HOME"] = os.path.join(TEXT_ROOT, "models")
 os.environ["PYTHONHASHSEED"] = "0"
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class TextProcessor:
         self.align_model_cache = {} # Cache models for different languages
         
         # Ensure model caches are created in the text folder
-        self.model_cache_dir = "e:/TRIZEN/audio_video/backend/text/models"
+        self.model_cache_dir = os.path.join(TEXT_ROOT, "models")
         os.makedirs(os.path.join(self.model_cache_dir, "huggingface"), exist_ok=True)
         
         # Direct paths for storage
@@ -369,6 +370,6 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.INFO)
     processor = TextProcessor()
-    print("--- Starting Model Pre-load (E: Drive) ---")
+    print("--- Starting Model Pre-load ---")
     processor._load_models()
-    print("--- Models are now saved and ready on E: drive! ---")
+    print(f"--- Models are now saved and ready in: {processor.model_cache_dir} ---")
