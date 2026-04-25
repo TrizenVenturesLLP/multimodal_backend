@@ -173,10 +173,10 @@ async def analyze_multimodal(video: UploadFile = File(...)):
     audio_path = os.path.join(TEMP_AUDIO_DIR, f"{job_id}.wav")
     
     try:
-        # Save to disk
-        content = await video.read()
+        # Save to disk using streaming to prevent OOM for large files
         with open(video_path, "wb") as f:
-            f.write(content)
+            while chunk := await video.read(1024 * 1024): # 1MB chunks
+                f.write(chunk)
         
         # IMPORTANT: Close the UploadFile handle immediately to avoid WinError 32
         await video.close()
