@@ -49,7 +49,7 @@ logger.info(f"Redirected system temp storage to: {tempfile.tempdir}")
 app = FastAPI(
     title="Multimodal Emotion Analysis API",
     description="Unified Audio + Video + text emotion detection and grading (Async Support)",
-    version="1.2.0"
+    version="1.2.1"
 )
 
 # CORS configuration
@@ -75,11 +75,9 @@ async def fix_proxy_headers(request: Request, call_next):
 # Directory configuration
 TEMP_VIDEO_DIR = "temp_videos"
 TEMP_AUDIO_DIR = "temp_audio"
-TEMP_TRANS_DIR = "temp_trans"
 TEMP_RESULTS_DIR = "temp_results"
 os.makedirs(TEMP_VIDEO_DIR, exist_ok=True)
 os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
-os.makedirs(TEMP_TRANS_DIR, exist_ok=True)
 os.makedirs(TEMP_RESULTS_DIR, exist_ok=True)
 
 # Initialize global services
@@ -146,7 +144,23 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
 
         fusion_results = FusionLogicService.fuse_metrics(audio_metrics, video_metrics, text_metrics, audio_probs, video_avg_probs, text_overall_score)
         
-        # Step 4: Feedback Generation
+        # Step 4: Evidence & Timeline
+        jobs_status[job_id].update({"progress": 85, "step": "Extracting evidence"})
+        evidence_log = FusionLogicService.extract_xai_evidence(
+            audio_results.get("chunks", []), 
+            video_results.get("emotion_data", []), 
+            audio_metrics, 
+            video_metrics, 
+            fusion_results["alignment_score"],
+            text_analysis_results
+        )
+        
+        timeline_data = FusionLogicService.generate_timeline_data(
+            audio_results.get("chunks", []),
+            video_results.get("emotion_data", [])
+        )
+
+        # Step 5: Feedback Generation
         jobs_status[job_id].update({"progress": 90, "step": "Generating feedback"})
         ai_feedback = await FusionLogicService.generate_multimodal_feedback(
             audio_metrics, video_metrics, text_metrics, fusion_results["final_score"], fusion_results["alignment_score"]
@@ -161,8 +175,12 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
             "multimodal_score": fusion_results["final_score"],
             "overall_feedback": ai_feedback,
             "alignment_score": fusion_results["alignment_score"],
-            "rubric_scores": fusion_results["rubric_scores"],
-            "rubric_justifications": fusion_results["rubric_justifications"],
+            "rubric_scores": fusion_results["fused_rubrics"], # Fixed: was rubric_scores
+            "rubric_justifications": fusion_results["fused_justifications"], # Fixed: was rubric_justifications
+            "evidence_log": evidence_log,
+            "timeline_data": timeline_data,
+            "transcription": text_results.get("transcription", ""),
+            "qa_pairs": text_results.get("qa_pairs", []),
             "individual_analysis": {
                 "video": video_results,
                 "audio": audio_results,
@@ -187,7 +205,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
 
 @app.get("/")
 async def root():
-    return {"status": "online", "version": "1.2.0"}
+    return {"status": "online", "version": "1.2.1"}
 
 @app.get("/health")
 async def health_check():
