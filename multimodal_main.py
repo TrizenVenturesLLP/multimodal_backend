@@ -12,6 +12,7 @@ import asyncio
 import shutil
 from datetime import datetime
 from dotenv import load_dotenv
+import uvicorn
 
 # Load environment variables from consolidated .env
 load_dotenv()
@@ -60,6 +61,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Fix for Swagger UI when behind a reverse proxy (CapRover)
+# Ensures that HTTPS is used if the proxy says so
+@app.middleware("http")
+async def fix_proxy_headers(request: Request, call_next):
+    # Check for X-Forwarded-Proto header
+    proto = request.headers.get("X-Forwarded-Proto")
+    if proto:
+        # Update the request scope to use the correct scheme
+        request.scope["scheme"] = proto
+    return await call_next(request)
 
 # Directory configuration (Using root-level temp folders)
 TEMP_VIDEO_DIR = "temp_videos"
