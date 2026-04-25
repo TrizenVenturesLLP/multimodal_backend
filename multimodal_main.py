@@ -49,7 +49,7 @@ logger.info(f"Redirected system temp storage to: {tempfile.tempdir}")
 
 app = FastAPI(
     title="Multimodal Emotion Analysis API",
-    description="Unified Audio + Video emotion detection and grading",
+    description="Unified Audio + Video +text emotion detection and grading",
     version="1.1.0"
 )
 
