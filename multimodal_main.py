@@ -173,6 +173,17 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
             audio_metrics, video_metrics, text_metrics, fusion_results["final_score"], fusion_results["alignment_score"]
         )
 
+        # Attach rubrics to individual analyses for frontend compatibility
+        video_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in video_metrics.items()}
+        # Add 'Overall' for Dashboard.tsx compatibility
+        video_results["rubrics"]["Overall"] = {"score": video_metrics.get("Confidence", 50), "justification": "Overall visual performance."}
+        
+        audio_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in audio_metrics.items()}
+        audio_results["rubrics"]["Overall"] = {"score": audio_metrics.get("Vocal Confidence", 50), "justification": "Overall vocal performance."}
+        
+        text_results["rubrics"] = {k.replace("Textual ", ""): {"score": v, "justification": "Content analysis complete."} for k, v in text_metrics.items()}
+        text_results["overall_score"] = text_overall_score
+
         # Final Response
         response = {
             "job_id": job_id,
@@ -182,8 +193,8 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
             "multimodal_score": fusion_results["final_score"],
             "overall_feedback": ai_feedback,
             "alignment_score": fusion_results["alignment_score"],
-            "rubric_scores": fusion_results["fused_rubrics"], # Fixed: was rubric_scores
-            "rubric_justifications": fusion_results["fused_justifications"], # Fixed: was rubric_justifications
+            "rubric_scores": fusion_results["fused_rubrics"],
+            "rubric_justifications": fusion_results["fused_justifications"],
             "evidence_log": evidence_log,
             "timeline_data": timeline_data,
             "transcription": text_results.get("transcription", ""),
