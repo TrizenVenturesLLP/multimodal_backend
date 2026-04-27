@@ -114,16 +114,23 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
         command = [FFMPEG_EXE, '-y', '-i', video_path, '-vn', '-acodec', 'pcm_s16le', '-ar', '22050', '-ac', '1', audio_path]
         subprocess.run(command, capture_output=True, check=True)
 
-        # Step 2: Parallel Model Inference
-        jobs_status[job_id].update({"progress": 40, "step": "Running AI models"})
-        logger.info(f"[{job_id}] Running parallel inference...")
-        
+        # Step 2: Sequential Model Inference (Memory Optimized)
         loop = asyncio.get_event_loop()
-        video_task = loop.run_in_executor(None, video_detector.process_video, video_path)
-        audio_task = loop.run_in_executor(None, audio_detector.process_audio, audio_path)
-        text_task = loop.run_in_executor(None, text_processor.process_audio, audio_path)
         
-        video_results, audio_results, text_results = await asyncio.gather(video_task, audio_task, text_task)
+        # 2a. Video Analysis
+        jobs_status[job_id].update({"progress": 30, "step": "Analyzing Video"})
+        logger.info(f"[{job_id}] Starting Video Inference...")
+        video_results = await loop.run_in_executor(None, video_detector.process_video, video_path)
+        
+        # 2b. Audio Analysis
+        jobs_status[job_id].update({"progress": 50, "step": "Analyzing Audio"})
+        logger.info(f"[{job_id}] Starting Audio Inference...")
+        audio_results = await loop.run_in_executor(None, audio_detector.process_audio, audio_path)
+        
+        # 2c. Text & Transcription
+        jobs_status[job_id].update({"progress": 70, "step": "Analyzing Transcription & Content"})
+        logger.info(f"[{job_id}] Starting Text Inference (WhisperX)...")
+        text_results = await loop.run_in_executor(None, text_processor.process_audio, audio_path)
         
         # Step 3: Fusion & Analysis
         jobs_status[job_id].update({"progress": 80, "step": "Fusing metrics"})
