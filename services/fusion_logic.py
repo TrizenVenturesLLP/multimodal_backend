@@ -158,7 +158,7 @@ class FusionLogicService:
         communication_summary = {
             "wpm": round(total_words / duration_min, 1),
             "filler_pct": round((total_fillers / total_words * 100), 1) if total_words > 0 else 0,
-            "vocab_level": max(set([s["vocab_level"] for s in all_stats]), key=[s["vocab_level"] for s in all_stats].count) if all_stats else "Intermediate",
+            "vocab_level": max(set([s["vocab_level"] for s in all_stats]), key=[s["vocab_level"] for s in all_stats].count, default="Intermediate") if all_stats else "Intermediate",
             "avg_response_length": round(total_words / len(text_analysis_results), 1) if text_analysis_results else 0
         }
 
@@ -298,8 +298,8 @@ class FusionLogicService:
         if text_analysis:
             try:
                 # Find most high-impact textual moment
-                best_answer = max(text_analysis, key=lambda x: x['metrics'].get('Clarity', {}).get('score', 0))
-                if best_answer['metrics'].get('Clarity', {}).get('score', 0) > 80:
+                best_answer = max(text_analysis, key=lambda x: x['metrics'].get('Clarity', {}).get('score', 0), default=None)
+                if best_answer and best_answer['metrics'].get('Clarity', {}).get('score', 0) > 80:
                     s_text = best_answer.get('start', 0)
                     e_text = best_answer.get('end', 0)
                     evidence_log.append({
@@ -335,14 +335,14 @@ class FusionLogicService:
             # Scan forwards
             for i in range(1, max_window):
                 next_ts = target_ts + i
-                if next_ts > max(audio_map.keys()): break
+                if not audio_map.keys() or next_ts > max(audio_map.keys()): break
                 if not threshold_fn(next_ts): break
                 end = next_ts
             
             # PhD Upgrade: Ensure a minimum "Reviewable Window" (at least 2s)
             if start == end:
                 if start > 0: start -= 1
-                if end < max(audio_map.keys()): end += 1
+                if audio_map.keys() and end < max(audio_map.keys()): end += 1
                 
             return start, end
 
@@ -358,7 +358,7 @@ class FusionLogicService:
                 engagement_signals.append((ts, val))
         
         if engagement_signals:
-            ts, peak = max(engagement_signals, key=lambda x: x[1])
+            ts, peak = max(engagement_signals, key=lambda x: x[1], default=(0, 0))
             if peak > 0.45: # Lowered from 0.55
                 s, e = get_bounds(ts, engagement_signals, lambda t: any(x[1] > 0.35 for x in engagement_signals if x[0] == t))
                 evidence_log.append({
@@ -375,7 +375,7 @@ class FusionLogicService:
         # --- CATEGORY 2: STRESS / TENSION ---
         stress_signals = [(round(c['timestamp']), c['probabilities'][0] + c['probabilities'][2]) for c in audio_chunks]
         if stress_signals:
-            ts, peak = max(stress_signals, key=lambda x: x[1])
+            ts, peak = max(stress_signals, key=lambda x: x[1], default=(0, 0))
             if peak > 0.25: # Lowered from 0.35
                 s, e = get_bounds(ts, stress_signals, lambda t: any(x[1] > 0.2 for x in stress_signals if x[0] == t))
                 evidence_log.append({
@@ -402,7 +402,7 @@ class FusionLogicService:
                     if (a_val > 0.2 and v_val < 0.1) or (a_val < -0.2 and v_val > -0.1):
                         mismatches.append((ts, abs(a_val - v_val)))
             if mismatches:
-                ts, peak = max(mismatches, key=lambda x: x[1])
+                ts, peak = max(mismatches, key=lambda x: x[1], default=(0, 0))
                 s, e = get_bounds(ts, mismatches, lambda t: any(x[1] > 0.15 for x in mismatches if x[0] == t))
                 evidence_log.append({
                     "timestamp": f"{fmt_time(s)} - {fmt_time(e)}",
@@ -418,7 +418,7 @@ class FusionLogicService:
         # --- CATEGORY 4: VIDEO (CONFIDENCE & ENTHUSIASM) ---
         confidence_signals = [(round(v['timestamp']), v['probabilities'][4]*0.6 + v['probabilities'][3]*0.4) for v in video_frames]
         if confidence_signals:
-            ts, peak = max(confidence_signals, key=lambda x: x[1])
+            ts, peak = max(confidence_signals, key=lambda x: x[1], default=(0, 0))
             if peak > 0.7:
                 s, e = get_bounds(ts, confidence_signals, lambda t: any(x[1] > 0.6 for x in confidence_signals if x[0] == t))
                 evidence_log.append({
@@ -436,7 +436,7 @@ class FusionLogicService:
         # Detect Fear/Surprise spikes
         anxiety_signals = [(round(v['timestamp']), v['probabilities'][2]*1.2 + v['probabilities'][6]*0.5) for v in video_frames]
         if anxiety_signals:
-            ts, peak = max(anxiety_signals, key=lambda x: x[1])
+            ts, peak = max(anxiety_signals, key=lambda x: x[1], default=(0, 0))
             if peak > 0.4:
                 s, e = get_bounds(ts, anxiety_signals, lambda t: any(x[1] > 0.3 for x in anxiety_signals if x[0] == t))
                 evidence_log.append({
@@ -453,7 +453,7 @@ class FusionLogicService:
         # --- CATEGORY 6: FRUSTRATION ---
         frustration_signals = [(round(v['timestamp']), v['probabilities'][0]*1.5 + v['probabilities'][1]*1.5) for v in video_frames]
         if frustration_signals:
-            ts, peak = max(frustration_signals, key=lambda x: x[1])
+            ts, peak = max(frustration_signals, key=lambda x: x[1], default=(0, 0))
             if peak > 0.35:
                 s, e = get_bounds(ts, frustration_signals, lambda t: any(x[1] > 0.25 for x in frustration_signals if x[0] == t))
                 evidence_log.append({
@@ -472,7 +472,7 @@ class FusionLogicService:
              # Find a low confidence segment
              low_conf_signals = [(round(v['timestamp']), v['probabilities'][4]*0.6 + v['probabilities'][3]*0.4) for v in video_frames]
              if low_conf_signals:
-                 ts, peak = min(low_conf_signals, key=lambda x: x[1])
+                 ts, peak = min(low_conf_signals, key=lambda x: x[1], default=(0, 0))
                  s, e = get_bounds(ts, low_conf_signals, lambda t: any(x[1] < 0.5 for x in low_conf_signals if x[0] == t))
                  evidence_log.append({
                     "timestamp": f"{fmt_time(s)} - {fmt_time(e)}",

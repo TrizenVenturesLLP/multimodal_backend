@@ -154,7 +154,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
         # Step 4: Evidence & Timeline
         jobs_status[job_id].update({"progress": 85, "step": "Extracting evidence"})
         evidence_log = FusionLogicService.extract_xai_evidence(
-            audio_results.get("chunks", []), 
+            audio_results.get("chunk_data", []), 
             video_results.get("emotion_data", []), 
             audio_metrics, 
             video_metrics, 
@@ -163,7 +163,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
         )
         
         timeline_data = FusionLogicService.generate_timeline_data(
-            audio_results.get("chunks", []),
+            audio_results.get("chunk_data", []),
             video_results.get("emotion_data", [])
         )
 
