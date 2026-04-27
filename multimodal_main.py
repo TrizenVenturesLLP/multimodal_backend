@@ -196,6 +196,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
         text_results["rubrics"] = {k.replace("Textual ", ""): {"score": v, "justification": "Content analysis complete."} for k, v in text_metrics.items()}
         text_results["overall_score"] = text_overall_score
         text_results["behavioral"] = text_stats
+        text_results["detailed_analysis"] = text_analysis_results
 
         # Final Response
         response = {
