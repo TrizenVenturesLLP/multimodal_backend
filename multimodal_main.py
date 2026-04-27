@@ -177,6 +177,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
         video_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in video_metrics.items()}
         video_results["rubrics"]["Overall"] = {"score": video_metrics.get("Confidence", 50), "justification": "Overall visual performance."}
         video_results["behavioral"] = video_results.get("behavioral_metrics", {})
+        video_results["dominant"] = video_results.get("dominant_emotion", "Neutral")
         
         # Audio Behavioral Mapping
         audio_chunks = audio_results.get("chunk_data", [])
@@ -190,6 +191,7 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
             "filler_pct": text_stats.get("filler_pct", 0),
             "pitch_variation": pitch_var
         }
+        audio_results["dominant"] = audio_results.get("dominant_emotion", "Neutral")
         audio_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in audio_metrics.items()}
         audio_results["rubrics"]["Overall"] = {"score": audio_metrics.get("Vocal Confidence", 50), "justification": "Overall vocal performance."}
         

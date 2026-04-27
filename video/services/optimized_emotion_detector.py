@@ -174,9 +174,9 @@ class OptimizedEmotionDetector:
                     
                     if target_face['confidence'] > min_face_confidence:
                         # 3. EYE CONTACT HEURISTIC
-                        # Presence and centering of keypoints
+                        # Presence and centering of keypoints (Widened for dynamic capture)
                         kp = target_face.get('keypoints', {})
-                        if 'left_eye' in kp and 'right_eye' in kp:
+                        if 'left_eye' in kp or 'right_eye' in kp: # Any eye detected counts as potential contact
                             eye_contact_samples += 1
                         
                         # EMOTION CLASSIFICATION
@@ -224,7 +224,8 @@ class OptimizedEmotionDetector:
             eye_contact_score = (eye_contact_samples / processed_samples * 100) if processed_samples > 0 else 0
             avg_motion = np.mean(motion_history) if motion_history else 0
             # Gestures approx count (peaks in motion)
-            gestures_count = len([m for m in motion_history if m > 0.05]) # Simple threshold
+            # Lowered threshold (0.03) for dynamic sensitivity
+            gestures_count = len([m for m in motion_history if m > 0.03]) 
             gestures_per_min = (gestures_count / (duration / 60)) if duration > 0 else 0
 
             return {
