@@ -175,14 +175,27 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
 
         # Attach rubrics to individual analyses for frontend compatibility
         video_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in video_metrics.items()}
-        # Add 'Overall' for Dashboard.tsx compatibility
         video_results["rubrics"]["Overall"] = {"score": video_metrics.get("Confidence", 50), "justification": "Overall visual performance."}
+        video_results["behavioral"] = video_results.get("behavioral_metrics", {})
         
+        # Audio Behavioral Mapping
+        audio_chunks = audio_results.get("chunk_data", [])
+        avg_db = round(sum(c.get("db", -60) for c in audio_chunks) / len(audio_chunks), 1) if audio_chunks else -60
+        pitch_vals = [c.get("pitch", 0) for c in audio_chunks if c.get("pitch", 0) > 0]
+        pitch_var = round(max(pitch_vals) - min(pitch_vals), 1) if pitch_vals else 0
+        
+        audio_results["behavioral"] = {
+            "avg_db": avg_db,
+            "wpm": text_stats.get("wpm", 0),
+            "filler_pct": text_stats.get("filler_pct", 0),
+            "pitch_variation": pitch_var
+        }
         audio_results["rubrics"] = {k: {"score": v, "justification": fusion_results["fused_justifications"].get(k, "Analysis complete.")} for k, v in audio_metrics.items()}
         audio_results["rubrics"]["Overall"] = {"score": audio_metrics.get("Vocal Confidence", 50), "justification": "Overall vocal performance."}
         
         text_results["rubrics"] = {k.replace("Textual ", ""): {"score": v, "justification": "Content analysis complete."} for k, v in text_metrics.items()}
         text_results["overall_score"] = text_overall_score
+        text_results["behavioral"] = text_stats
 
         # Final Response
         response = {

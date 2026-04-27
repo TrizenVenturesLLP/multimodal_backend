@@ -267,6 +267,18 @@ class FusionLogicService:
         for name, score in fused_results.items():
             justifications[name] = cls.get_metric_justification(name, score, audio_probs, video_avg_probs)
 
+        # Step F: Rich Alignment Data for Frontend
+        dominant_audio = cls.STANDARD_EMOTIONS[np.argmax(audio_probs)] if audio_probs is not None else "Neutral"
+        dominant_video = cls.STANDARD_EMOTIONS[np.argmax(video_avg_probs)] if video_avg_probs is not None else "Neutral"
+        
+        alignment_data = {
+            "score": alignment_score,
+            "consistency_score": alignment_score,
+            "audio_emotion": dominant_audio,
+            "facial_emotion": dominant_video,
+            "mismatch_example": "Strong synergy between voice and face." if alignment_score > 75 else f"Vocal tone was {dominant_audio} while facial expression appeared {dominant_video}."
+        }
+
         # Final Score: Custom Weighted Fusion
         # 60% Text + 20% Audio + 20% Video
         audio_avg = sum(audio_metrics.values()) / len(audio_metrics) if audio_metrics else 50
@@ -279,7 +291,7 @@ class FusionLogicService:
             "text_rubrics": text_metrics,
             "fused_justifications": justifications,
             "final_score": int(round(raw_final)),
-            "alignment_score": int(round(alignment_score)),
+            "alignment_score": alignment_data, # Return the rich object
             "text_overall_score": int(round(text_overall_score))
         }
 
