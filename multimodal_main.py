@@ -228,6 +228,17 @@ async def process_analysis_job(job_id: str, video_path: str, filename: str):
             json.dump(response, f)
             
         jobs_status[job_id] = {"status": "completed", "completed_at": datetime.now().isoformat()}
+
+        # NEW: Automatic Cleanup of Heavy Files
+        # We keep the JSON result, but delete video, audio, and CSV to save space
+        temp_files = [video_path, audio_path, text_results.get("csv_path")]
+        for f_path in temp_files:
+            if f_path and os.path.exists(f_path):
+                try:
+                    os.remove(f_path)
+                    logger.info(f"CLEANUP: Removed temporary file {f_path}")
+                except Exception as e:
+                    logger.error(f"CLEANUP ERROR: Could not remove {f_path}: {e}")
         logger.info(f"[{job_id}] Job completed.")
 
     except Exception as e:
