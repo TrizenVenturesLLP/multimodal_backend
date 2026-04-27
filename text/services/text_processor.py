@@ -75,7 +75,7 @@ class TextProcessor:
             # 1. Transcribe
             logger.info("Step 1/4: Transcribing audio text...")
             audio = whisperx.load_audio(audio_path)
-            result = self.model.transcribe(audio, batch_size=self.batch_size)
+            result = self.model.transcribe(audio, batch_size=self.batch_size, language="en")
             language = result.get("language", "en")
             logger.info(f"Transcription complete (Language: {language})")
             
