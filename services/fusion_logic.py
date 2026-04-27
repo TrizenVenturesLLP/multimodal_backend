@@ -61,7 +61,9 @@ class FusionLogicService:
             return 50.0
             
         # Cosine Similarity (0 to 1)
-        similarity = np.dot(a, v) / (np.linalg.norm(a) * np.linalg.norm(v))
+        # Use nan_to_num to prevent NaN from leaking if norms are extremely small
+        sim_raw = np.dot(a, v) / (np.linalg.norm(a) * np.linalg.norm(v))
+        similarity = float(np.nan_to_num(sim_raw))
         
         # Map to 5-95 scale
         return cls.scale(similarity, 0, 1)
@@ -94,11 +96,15 @@ class FusionLogicService:
         Confidence, Enthusiasm, Stress, Stability, Engagement, Frustration, Anxiety.
         Includes spike detection for dynamic behavioral analysis.
         """
-        if not probs_list:
-            return {}
+        if not probs_list or len(probs_list) == 0:
+            # Dynamic baseline if no data - avoid static 0
+            return {k: 50 for k in ["Confidence", "Enthusiasm", "Stress", "Stability", "Engagement", "Frustration", "Anxiety"]}, [1/7]*7
             
         norm_probs = [cls._normalize_probs(p) for p in probs_list]
         avg_probs = np.mean(norm_probs, axis=0)
+        # Ensure no NaN leaks from mean
+        avg_probs = np.nan_to_num(avg_probs, nan=1/7)
+        
         anger, disgust, fear, happy, neutral, sad, surprise = avg_probs
         
         # Calculate Surprise Spike (Max - Avg) for Stress/Anxiety formulas
@@ -402,7 +408,8 @@ class FusionLogicService:
                 })
 
         # --- CATEGORY 3: ALIGNMENT (CORE FEATURE) ---
-        if alignment_score < 80:
+        a_score = alignment_score.get("score", 50) if isinstance(alignment_score, dict) else alignment_score
+        if a_score < 80:
             mismatches = []
             for v in video_frames:
                 ts = round(v['timestamp'])
@@ -599,7 +606,7 @@ class FusionLogicService:
             Analyze the following performance across all THREE channels (vocal acoustics, facial presence, and text analysis content):
 
             OVERALL PERFORMANCE: {int(round(final_score))}/100
-            EMOTION ALIGNMENT (Face vs Voice): {int(round(alignment_score))}%
+            EMOTION ALIGNMENT (Face vs Voice): {int(round(alignment_score.get("score", 50) if isinstance(alignment_score, dict) else alignment_score))}%
             MISMATCH DETECTED: {"YES" if mismatch_flag else "NO"}
 
             AUDIO (VOCAL) BENCHMARKS:
